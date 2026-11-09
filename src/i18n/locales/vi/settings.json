@@ -58,7 +58,17 @@
 		"shadow": "Bóng đổ",
 		"roundness": "Độ bo tròn",
 		"padding": "Phần đệm",
-		"on": "bật"
+		"on": "bật",
+		"presets": {
+			"title": "Presets",
+			"saveCurrent": "Save current",
+			"namePlaceholder": "Preset name",
+			"save": "Save",
+			"apply": "Apply preset",
+			"defaultBadge": "Default",
+			"setDefault": "Set as default for new recordings",
+			"delete": "Delete preset"
+		}
 	},
 	"background": {
 		"title": "Nền",

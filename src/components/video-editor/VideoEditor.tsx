@@ -35,6 +35,7 @@ import {
 	trimLeadingSilenceMono16k,
 } from "@/lib/captioning";
 import { hasNativeCursorRecordingData } from "@/lib/cursor/nativeCursor";
+import { loadDefaultPresetSettings } from "@/lib/effectPresets";
 import {
 	calculateEffectiveSourceDimensions,
 	calculateMp4ExportSettings,
@@ -176,7 +177,19 @@ function buildSaveDiagnosticMessage(formatLabel: "GIF" | "Video", reason?: strin
 
 const CAPTION_WORD_CHOICES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 
+/**
+ * Initial state for a NEW recording: the built-in defaults with the user's
+ * default effects preset applied on top. Loaded projects never pass through
+ * here; they restore their own saved settings. Resolved once per editor
+ * mount, which is the moment a fresh recording session starts.
+ */
+function resolveNewRecordingInitialState(): typeof INITIAL_EDITOR_STATE {
+	const preset = loadDefaultPresetSettings();
+	return preset ? { ...INITIAL_EDITOR_STATE, ...preset } : INITIAL_EDITOR_STATE;
+}
+
 export default function VideoEditor() {
+	const [newRecordingInitialState] = useState(resolveNewRecordingInitialState);
 	const {
 		state: editorState,
 		pushState,
@@ -185,7 +198,7 @@ export default function VideoEditor() {
 		undo,
 		redo,
 		resetState,
-	} = useEditorHistory(INITIAL_EDITOR_STATE);
+	} = useEditorHistory(newRecordingInitialState);
 
 	const {
 		zoomRegions,
@@ -573,7 +586,7 @@ export default function VideoEditor() {
 									? { cursorCaptureMode: session.cursorCaptureMode }
 									: {}),
 							},
-							INITIAL_EDITOR_STATE,
+							newRecordingInitialState,
 						),
 					);
 					return;
@@ -586,7 +599,7 @@ export default function VideoEditor() {
 					setRecordingCursorCaptureMode(null);
 					setCurrentProjectPath(null);
 					setLastSavedSnapshot(
-						createProjectSnapshot({ screenVideoPath: result.path }, INITIAL_EDITOR_STATE),
+						createProjectSnapshot({ screenVideoPath: result.path }, newRecordingInitialState),
 					);
 				}
 				// No video/project/session, so leave videoPath null and let the
@@ -2364,6 +2377,7 @@ export default function VideoEditor() {
 					<button
 						type="button"
 						onClick={handleLoadProject}
+						style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
 						className="px-3 py-1.5 rounded-md bg-[#34B27B] text-white text-sm hover:bg-[#34B27B]/90"
 					>
 						{ts("project.load")}
@@ -2486,12 +2500,12 @@ export default function VideoEditor() {
 				className="h-11 flex-shrink-0 bg-[#070809]/85 backdrop-blur-xl border-b border-white/[0.07] flex items-center justify-between px-5 z-50 shadow-[0_1px_0_rgba(255,255,255,0.03)]"
 				style={{ WebkitAppRegion: "drag" } as CSSProperties}
 			>
-				<div
-					className="flex-1 flex items-center gap-1"
-					style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
-				>
+				{/* Only the interactive controls are no-drag; the rest of the bar
+				    (including the empty space in this flex row) drags the window. */}
+				<div className="flex-1 flex items-center gap-1">
 					<div
 						className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white/50 hover:text-white/90 hover:bg-white/[0.08] transition-all duration-150 ${isMac ? "ml-14" : "ml-2"}`}
+						style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
 					>
 						<Languages size={14} />
 						<select
@@ -2510,6 +2524,7 @@ export default function VideoEditor() {
 					<button
 						type="button"
 						onClick={() => setShowNewRecordingDialog(true)}
+						style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
 						className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white/50 hover:text-white/90 hover:bg-white/[0.08] transition-all duration-150 text-[11px] font-medium"
 					>
 						<Video size={14} />
@@ -2518,6 +2533,7 @@ export default function VideoEditor() {
 					<button
 						type="button"
 						onClick={handleLoadProject}
+						style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
 						className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white/50 hover:text-white/90 hover:bg-white/[0.08] transition-all duration-150 text-[11px] font-medium"
 					>
 						<FolderOpen size={14} />
@@ -2526,6 +2542,7 @@ export default function VideoEditor() {
 					<button
 						type="button"
 						onClick={handleSaveProject}
+						style={{ WebkitAppRegion: "no-drag" } as CSSProperties}
 						className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-white/50 hover:text-white/90 hover:bg-white/[0.08] transition-all duration-150 text-[11px] font-medium"
 					>
 						<Save size={14} />

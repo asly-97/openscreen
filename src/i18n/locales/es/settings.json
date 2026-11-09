@@ -58,7 +58,17 @@
 		"shadow": "Sombra",
 		"roundness": "Redondez",
 		"padding": "Relleno",
-		"on": "activado"
+		"on": "activado",
+		"presets": {
+			"title": "Presets",
+			"saveCurrent": "Save current",
+			"namePlaceholder": "Preset name",
+			"save": "Save",
+			"apply": "Apply preset",
+			"defaultBadge": "Default",
+			"setDefault": "Set as default for new recordings",
+			"delete": "Delete preset"
+		}
 	},
 	"background": {
 		"title": "Fondo",

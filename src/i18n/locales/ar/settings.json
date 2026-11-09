@@ -58,7 +58,17 @@
 		"on": "تشغيل",
 		"shadow": "ظل",
 		"roundness": "الاستدارة",
-		"padding": "المسافة البادئة"
+		"padding": "المسافة البادئة",
+		"presets": {
+			"title": "Presets",
+			"saveCurrent": "Save current",
+			"namePlaceholder": "Preset name",
+			"save": "Save",
+			"apply": "Apply preset",
+			"defaultBadge": "Default",
+			"setDefault": "Set as default for new recordings",
+			"delete": "Delete preset"
+		}
 	},
 	"background": {
 		"title": "الخلفية",

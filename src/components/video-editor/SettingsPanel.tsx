@@ -12,6 +12,7 @@ import {
 	Lock,
 	MousePointerClick,
 	Palette,
+	Plus,
 	SlidersHorizontal,
 	Sparkles,
 	Star,
@@ -45,6 +46,13 @@ import { useScopedT } from "@/contexts/I18nContext";
 import { getAssetPath } from "@/lib/assetPath";
 import { WEBCAM_LAYOUT_PRESETS } from "@/lib/compositeLayout";
 import { CURSOR_THEMES, DEFAULT_CURSOR_THEME_ID } from "@/lib/cursor/cursorThemes";
+import {
+	createEffectPreset,
+	type EffectPreset,
+	type EffectPresetStore,
+	loadEffectPresetStore,
+	saveEffectPresetStore,
+} from "@/lib/effectPresets";
 import type { ExportFormat, ExportQuality, GifFrameRate, GifSizePreset } from "@/lib/exporter";
 import {
 	calculateEffectiveSourceDimensions,
@@ -510,6 +518,86 @@ export function SettingsPanel({
 			}),
 		],
 		[t],
+	);
+	// Video Effects presets (named looks, one optional default for new recordings)
+	const [presetStore, setPresetStore] = useState<EffectPresetStore>(() => loadEffectPresetStore());
+	const [newPresetName, setNewPresetName] = useState("");
+	const [showPresetNameInput, setShowPresetNameInput] = useState(false);
+
+	const updatePresetStore = useCallback((next: EffectPresetStore) => {
+		setPresetStore(next);
+		saveEffectPresetStore(next);
+	}, []);
+
+	const applyEffectPreset = useCallback(
+		(preset: EffectPreset) => {
+			const s = preset.settings;
+			onShadowChange?.(s.shadowIntensity);
+			onShadowCommit?.();
+			onBorderRadiusChange?.(s.borderRadius);
+			onBorderRadiusCommit?.();
+			onPaddingChange?.(s.padding);
+			onPaddingCommit?.();
+			onMotionBlurChange?.(s.motionBlurAmount);
+			onMotionBlurCommit?.();
+			onBlurChange?.(s.showBlur);
+			onWallpaperChange(s.wallpaper);
+		},
+		[
+			onShadowChange,
+			onShadowCommit,
+			onBorderRadiusChange,
+			onBorderRadiusCommit,
+			onPaddingChange,
+			onPaddingCommit,
+			onMotionBlurChange,
+			onMotionBlurCommit,
+			onBlurChange,
+			onWallpaperChange,
+		],
+	);
+
+	const saveCurrentAsPreset = useCallback(() => {
+		const name = newPresetName.trim();
+		if (!name) return;
+		const preset = createEffectPreset(name, {
+			shadowIntensity,
+			borderRadius,
+			padding,
+			motionBlurAmount,
+			showBlur: showBlur ?? false,
+			wallpaper: selected,
+		});
+		updatePresetStore({ ...presetStore, presets: [...presetStore.presets, preset] });
+		setNewPresetName("");
+		setShowPresetNameInput(false);
+	}, [
+		newPresetName,
+		presetStore,
+		updatePresetStore,
+		shadowIntensity,
+		borderRadius,
+		padding,
+		motionBlurAmount,
+		showBlur,
+		selected,
+	]);
+
+	const setDefaultEffectPreset = useCallback(
+		(id: string | null) => {
+			updatePresetStore({ ...presetStore, defaultPresetId: id });
+		},
+		[presetStore, updatePresetStore],
+	);
+
+	const deleteEffectPreset = useCallback(
+		(id: string) => {
+			updatePresetStore({
+				presets: presetStore.presets.filter((p) => p.id !== id),
+				defaultPresetId: presetStore.defaultPresetId === id ? null : presetStore.defaultPresetId,
+			});
+		},
+		[presetStore, updatePresetStore],
 	);
 	const [customImages, setCustomImages] = useState<string[]>([]);
 	const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1442,26 +1530,107 @@ export function SettingsPanel({
 									<AccordionContent className="pb-3">
 										{activePanelMode === "effects" && (
 											<>
-												<div className="grid grid-cols-2 gap-2 mb-3">
-													<div className="flex items-center justify-between p-2 rounded-lg editor-control-surface">
-														<div className="text-[10px] font-medium text-slate-300">
+												<div className="p-3 rounded-xl editor-control-surface mb-3">
+													<div className="flex items-center justify-between gap-2 mb-2">
+														<div className="text-xs font-semibold text-slate-100">
+															{t("effects.presets.title")}
+														</div>
+														<button
+															type="button"
+															onClick={() => setShowPresetNameInput((v) => !v)}
+															className="flex shrink-0 items-center gap-1 rounded-md bg-[#34B27B]/15 px-2 py-1 text-[11px] font-medium text-[#34B27B] transition-colors hover:bg-[#34B27B]/25"
+														>
+															<Plus className="h-3 w-3" />
+															{t("effects.presets.saveCurrent")}
+														</button>
+													</div>
+													{showPresetNameInput && (
+														<div className="flex items-center gap-2 mb-2">
+															<input
+																value={newPresetName}
+																onChange={(e) => setNewPresetName(e.target.value)}
+																onKeyDown={(e) => {
+																	if (e.key === "Enter") saveCurrentAsPreset();
+																}}
+																placeholder={t("effects.presets.namePlaceholder")}
+																className="min-w-0 flex-1 rounded-md border border-white/10 bg-white/[0.04] px-2 py-1.5 text-xs text-slate-100 outline-none placeholder:text-slate-500 focus:border-[#34B27B]/60"
+															/>
+															<button
+																type="button"
+																onClick={saveCurrentAsPreset}
+																disabled={!newPresetName.trim()}
+																className="shrink-0 rounded-md bg-[#34B27B] px-2.5 py-1.5 text-[11px] font-semibold text-white transition-opacity disabled:opacity-40"
+															>
+																{t("effects.presets.save")}
+															</button>
+														</div>
+													)}
+													<div className="space-y-1">
+														{presetStore.presets.map((preset) => {
+															const isDefault = presetStore.defaultPresetId === preset.id;
+															return (
+																<div
+																	key={preset.id}
+																	className="group flex items-center gap-1.5 rounded-lg px-1.5 py-1 transition-colors hover:bg-white/[0.05]"
+																>
+																	<button
+																		type="button"
+																		onClick={() => applyEffectPreset(preset)}
+																		className="min-w-0 flex-1 truncate text-left text-xs text-slate-200"
+																		title={t("effects.presets.apply")}
+																	>
+																		{preset.name}
+																	</button>
+																	{isDefault && (
+																		<span className="shrink-0 rounded-full bg-[#34B27B]/15 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#34B27B]">
+																			{t("effects.presets.defaultBadge")}
+																		</span>
+																	)}
+																	<button
+																		type="button"
+																		onClick={() =>
+																			setDefaultEffectPreset(isDefault ? null : preset.id)
+																		}
+																		title={t("effects.presets.setDefault")}
+																		className="shrink-0 rounded-md p-1 text-slate-400 transition-colors hover:bg-white/10 hover:text-amber-300"
+																	>
+																		<Star
+																			className={`h-3.5 w-3.5 ${isDefault ? "fill-amber-300 text-amber-300" : ""}`}
+																		/>
+																	</button>
+																	{!preset.builtin && (
+																		<button
+																			type="button"
+																			onClick={() => deleteEffectPreset(preset.id)}
+																			title={t("effects.presets.delete")}
+																			className="shrink-0 rounded-md p-1 text-slate-400 transition-colors hover:bg-white/10 hover:text-red-300"
+																		>
+																			<Trash2 className="h-3.5 w-3.5" />
+																		</button>
+																	)}
+																</div>
+															);
+														})}
+													</div>
+												</div>
+
+												<div className="space-y-2.5">
+													<div className="flex items-center justify-between gap-3 p-3 rounded-xl editor-control-surface">
+														<div className="text-xs font-medium text-slate-200">
 															{t("effects.blurBg")}
 														</div>
 														<Switch
 															checked={showBlur}
 															onCheckedChange={onBlurChange}
-															className="data-[state=checked]:bg-[#34B27B] scale-90"
+															className="data-[state=checked]:bg-[#34B27B]"
 														/>
 													</div>
-												</div>
-
-												<div className="grid grid-cols-2 gap-2">
-													<div className="p-2 rounded-lg editor-control-surface">
-														<div className="flex items-center justify-between mb-1">
-															<div className="text-[10px] font-medium text-slate-300">
+													<div className="p-3 rounded-xl editor-control-surface">
+														<div className="flex items-center justify-between gap-3 mb-2">
+															<div className="text-xs font-medium text-slate-200 truncate">
 																{t("effects.motionBlur")}
 															</div>
-															<span className="text-[10px] text-slate-500 font-mono">
+															<span className="shrink-0 rounded-md bg-white/[0.06] px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-slate-300">
 																{motionBlurAmount === 0
 																	? t("effects.off")
 																	: motionBlurAmount.toFixed(2)}
@@ -1477,12 +1646,12 @@ export function SettingsPanel({
 															className="w-full [&_[role=slider]]:bg-[#34B27B] [&_[role=slider]]:border-[#34B27B] [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
 														/>
 													</div>
-													<div className="p-2 rounded-lg editor-control-surface">
-														<div className="flex items-center justify-between mb-1">
-															<div className="text-[10px] font-medium text-slate-300">
+													<div className="p-3 rounded-xl editor-control-surface">
+														<div className="flex items-center justify-between gap-3 mb-2">
+															<div className="text-xs font-medium text-slate-200 truncate">
 																{t("effects.shadow")}
 															</div>
-															<span className="text-[10px] text-slate-500 font-mono">
+															<span className="shrink-0 rounded-md bg-white/[0.06] px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-slate-300">
 																{Math.round(shadowIntensity * 100)}%
 															</span>
 														</div>
@@ -1496,12 +1665,12 @@ export function SettingsPanel({
 															className="w-full [&_[role=slider]]:bg-[#34B27B] [&_[role=slider]]:border-[#34B27B] [&_[role=slider]]:h-3 [&_[role=slider]]:w-3"
 														/>
 													</div>
-													<div className="p-2 rounded-lg editor-control-surface">
-														<div className="flex items-center justify-between mb-1">
-															<div className="text-[10px] font-medium text-slate-300">
+													<div className="p-3 rounded-xl editor-control-surface">
+														<div className="flex items-center justify-between gap-3 mb-2">
+															<div className="text-xs font-medium text-slate-200 truncate">
 																{t("effects.roundness")}
 															</div>
-															<span className="text-[10px] text-slate-500 font-mono">
+															<span className="shrink-0 rounded-md bg-white/[0.06] px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-slate-300">
 																{borderRadius}px
 															</span>
 														</div>
@@ -1516,13 +1685,13 @@ export function SettingsPanel({
 														/>
 													</div>
 													<div
-														className={`p-2 rounded-lg editor-control-surface ${webcamLayoutPreset === "vertical-stack" ? "opacity-40 pointer-events-none" : ""}`}
+														className={`p-3 rounded-xl editor-control-surface ${webcamLayoutPreset === "vertical-stack" ? "opacity-40 pointer-events-none" : ""}`}
 													>
-														<div className="flex items-center justify-between mb-1">
-															<div className="text-[10px] font-medium text-slate-300">
+														<div className="flex items-center justify-between gap-3 mb-2">
+															<div className="text-xs font-medium text-slate-200 truncate">
 																{t("effects.padding")}
 															</div>
-															<span className="text-[10px] text-slate-500 font-mono">
+															<span className="shrink-0 rounded-md bg-white/[0.06] px-1.5 py-0.5 font-mono text-[11px] tabular-nums text-slate-300">
 																{webcamLayoutPreset === "vertical-stack" ? "—" : `${padding}%`}
 															</span>
 														</div>

@@ -59,7 +59,17 @@
 		"on": "on",
 		"shadow": "Shadow",
 		"roundness": "Roundness",
-		"padding": "Padding"
+		"padding": "Padding",
+		"presets": {
+			"title": "Presets",
+			"saveCurrent": "Save current",
+			"namePlaceholder": "Preset name",
+			"save": "Save",
+			"apply": "Apply preset",
+			"defaultBadge": "Default",
+			"setDefault": "Set as default for new recordings",
+			"delete": "Delete preset"
+		}
 	},
 	"background": {
 		"title": "Background",

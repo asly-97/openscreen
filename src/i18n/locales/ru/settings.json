@@ -58,7 +58,17 @@
 		"on": "вкл",
 		"shadow": "Тень",
 		"roundness": "Скругление",
-		"padding": "Отступ"
+		"padding": "Отступ",
+		"presets": {
+			"title": "Presets",
+			"saveCurrent": "Save current",
+			"namePlaceholder": "Preset name",
+			"save": "Save",
+			"apply": "Apply preset",
+			"defaultBadge": "Default",
+			"setDefault": "Set as default for new recordings",
+			"delete": "Delete preset"
+		}
 	},
 	"background": {
 		"title": "Фон",

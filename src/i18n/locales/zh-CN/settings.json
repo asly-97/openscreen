@@ -58,7 +58,17 @@
 		"shadow": "阴影",
 		"roundness": "圆角",
 		"padding": "内边距",
-		"on": "开"
+		"on": "开",
+		"presets": {
+			"title": "Presets",
+			"saveCurrent": "Save current",
+			"namePlaceholder": "Preset name",
+			"save": "Save",
+			"apply": "Apply preset",
+			"defaultBadge": "Default",
+			"setDefault": "Set as default for new recordings",
+			"delete": "Delete preset"
+		}
 	},
 	"background": {
 		"title": "背景",
