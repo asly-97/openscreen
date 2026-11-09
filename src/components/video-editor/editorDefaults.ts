@@ -37,10 +37,14 @@ export const DEFAULT_EDITOR_APPEARANCE_SETTINGS: {
 	borderRadius: number;
 	showTrimWaveform: boolean;
 } = {
-	shadowIntensity: 0,
+	// Screen Studio style framing by default: the recording sits on the
+	// background with rounded corners and a soft drop shadow instead of
+	// square, flat edges. Both stay adjustable (or removable) via the
+	// Shadow and Roundness sliders in the settings panel.
+	shadowIntensity: 0.7,
 	showBlur: false,
 	motionBlurAmount: 0,
-	borderRadius: 0,
+	borderRadius: 16,
 	showTrimWaveform: true,
 };
 
